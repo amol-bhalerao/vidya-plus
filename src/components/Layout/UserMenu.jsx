@@ -8,26 +8,13 @@ import { LifeBuoy, LogOut, Settings, User } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const UserMenu = () => {
-  const user = useUser();
+  const { user, handleLogout } = useUser();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const signOut = async () => {
-    try {
-      const apiBase = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
-      await fetch(`${apiBase}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-      try { localStorage.removeItem('vidya_user'); } catch (e) {}
-    } catch (err) {
-      console.error('Error during logout:', err);
-    }
-  };
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/dashboard/login', { replace: true });
+    await handleLogout();
+    navigate('/admin/login', { replace: true });
     toast({
       title: "Signed Out",
       description: "You have been successfully logged out.",
@@ -63,11 +50,11 @@ const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
+        <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/dashboard/settings')}>
+        <DropdownMenuItem onClick={() => navigate('/admin/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>

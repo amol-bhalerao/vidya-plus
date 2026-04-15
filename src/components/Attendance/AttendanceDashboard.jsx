@@ -18,7 +18,7 @@ import AttendanceAnalytics from './AttendanceAnalytics';
 
 const AttendanceDashboard = () => {
   const { instituteId, user, isSuperAdmin } = useUser();
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
   const [institutes, setInstitutes] = useState([]);
   const [selectedInstitute, setSelectedInstitute] = useState('');
   const [courses, setCourses] = useState([]);

@@ -52,7 +52,7 @@ const StudentFeeDetails = ({ studentId, instituteId }) => {
       }
       
       if (billsRes.ok) {
-        setFeeBills(billsData || []);
+        setFeeBills(Array.isArray(billsData) ? billsData : []);
       } else {
         toast({ variant: 'destructive', title: 'Error fetching fee bills', description: billsData?.error || 'Failed to fetch fee bills' });
         setFeeBills([]);
@@ -175,7 +175,7 @@ const StudentFeeDetails = ({ studentId, instituteId }) => {
             <DialogHeader>
                 <DialogTitle>Student Ledger: {student.full_name}</DialogTitle>
             </DialogHeader>
-            <TransactionHistory studentId={studentId} instituteId={instituteId} />
+            <TransactionHistory student={student} institute={student?.institutes} />
         </DialogContent>
       </Dialog>
 

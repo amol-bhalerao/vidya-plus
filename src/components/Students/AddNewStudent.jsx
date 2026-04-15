@@ -15,18 +15,19 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 import AdmissionFormPrint from './AdmissionFormPrint';
 
 const studentSchema = z.object({
-  gr_no: z.string().optional(),
-  admission_no: z.string().min(1, 'Admission number is required.'),
-  abc_number: z.string().optional(),
-  full_name: z.string().min(3, 'Full name is required.'),
-  mother_name: z.string().min(3, 'Mother\'s name is required.'),
+  gr_no: z.string().trim().optional(),
+  admission_no: z.string().trim().min(1, 'Admission number is required.'),
+  abc_number: z.string().trim().optional(),
+  full_name: z.string().trim().min(3, 'Full name is required.'),
+  mother_name: z.string().trim().min(3, 'Mother\'s name is required.'),
   date_of_birth: z.date({ required_error: 'Date of birth is required.' }),
-  birth_place: z.string().min(2, "Place of birth is required"),
+  birth_place: z.string().trim().min(2, "Place of birth is required"),
   gender: z.enum(['male', 'female', 'other'], { required_error: 'Gender is required.' }),
-  aadhaar_no: z.string().length(12, 'Aadhaar must be 12 digits.').optional().or(z.literal('')),
+  aadhaar_no: z.string().trim().regex(/^\d{12}$/, 'Aadhaar must be 12 digits.').optional().or(z.literal('')),
   caste: z.string().optional(),
   category: z.string().optional(),
   religion: z.string().optional(),
@@ -37,12 +38,13 @@ const studentSchema = z.object({
     leaving_date: z.string().optional(),
   }).optional(),
   admission_date: z.date({ required_error: 'Admission date is required.' }),
-  course_id: z.string().uuid('Please select a course.'),
-  class_id: z.string().uuid('Please select a class.'),
+  course_id: z.string().min(1, 'Please select a course.'),
+  class_id: z.string().min(1, 'Please select a class.'),
 });
 
 const AddNewStudent = ({ instituteId, inquiryData, onSuccess }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [courses, setCourses] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -53,8 +55,8 @@ const AddNewStudent = ({ instituteId, inquiryData, onSuccess }) => {
     resolver: zodResolver(studentSchema),
     defaultValues: {
       full_name: inquiryData?.full_name || '',
-      course_id: inquiryData?.course_id || '',
-      class_id: inquiryData?.class_id || '',
+      course_id: inquiryData?.course_id ? String(inquiryData.course_id) : '',
+      class_id: inquiryData?.class_id ? String(inquiryData.class_id) : '',
       admission_date: new Date(),
       previous_school_details: { name: '', leaving_certificate_no: '', leaving_date: '' },
     }
@@ -89,8 +91,8 @@ const AddNewStudent = ({ instituteId, inquiryData, onSuccess }) => {
         }
         const data = await response.json();
         setClasses(data);
-        if (inquiryData?.class_id && data.some(c => c.id === inquiryData.class_id)) {
-          setValue('class_id', inquiryData.class_id);
+        if (inquiryData?.class_id && data.some(c => String(c.id) === String(inquiryData.class_id))) {
+          setValue('class_id', String(inquiryData.class_id));
         } else {
           setValue('class_id', '');
         }
@@ -103,7 +105,13 @@ const AddNewStudent = ({ instituteId, inquiryData, onSuccess }) => {
 
   const onSubmit = async (formData) => {
     setLoading(true);
-    const submissionData = { ...formData, institute_id: instituteId, status: 'active' };
+    const submissionData = {
+      ...formData,
+      institute_id: Number(instituteId),
+      course_id: Number(formData.course_id),
+      class_id: Number(formData.class_id),
+      status: 'active'
+    };
 
     try {
       // Add new student
@@ -154,17 +162,16 @@ const AddNewStudent = ({ instituteId, inquiryData, onSuccess }) => {
       <Card>
         <CardHeader>
           <CardTitle>Registration Successful!</CardTitle>
-          <CardDescription>Student {completedStudent.student.full_name} has been registered.</CardDescription>
+          <CardDescription>
+            Student {completedStudent.student.full_name} has been registered and the required fee bills were added to the account.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          <p>You can now print the admission form.</p>
-          <div className="flex gap-4">
-            <Dialog>
-              <DialogTrigger asChild><Button><FileText className="mr-2 h-4 w-4" /> Print Admission Form</Button></DialogTrigger>
-              <DialogContent className="sm:max-w-4xl"><AdmissionFormPrint studentData={completedStudent} /></DialogContent>
-            </Dialog>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-600">Review the admission form below and print it immediately if needed.</p>
+          <AdmissionFormPrint studentData={completedStudent} />
+          <div className="flex justify-end">
+            <Button variant="secondary" onClick={() => (onSuccess ? onSuccess() : navigate('/admin/students'))}>Close</Button>
           </div>
-          <Button variant="secondary" onClick={onSuccess}>Close</Button>
         </CardContent>
       </Card>
     )
@@ -179,7 +186,7 @@ const AddNewStudent = ({ instituteId, inquiryData, onSuccess }) => {
           <div><Label htmlFor="admission_date">Admission Date *</Label><Controller name="admission_date" control={control} render={({ field }) => (<Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>)} />{errors.admission_date && <p className="text-red-500 text-sm mt-1">{errors.admission_date.message}</p>}</div>
         </div>
         <div className="border-t pt-6 space-y-6"><h3 className="text-lg font-medium">Personal Information</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div><Label htmlFor="full_name">Full Name *</Label><Input id="full_name" {...register('full_name')} />{errors.full_name && <p className="text-red-500 text-sm mt-1">{errors.full_name.message}</p>}</div><div><Label htmlFor="mother_name">Mother's Name *</Label><Input id="mother_name" {...register('mother_name')} />{errors.mother_name && <p className="text-red-500 text-sm mt-1">{errors.mother_name.message}</p>}</div><div><Label htmlFor="gender">Gender *</Label><Controller name="gender" control={control} render={({ field }) => (<Select onValueChange={field.onChange} defaultValue={field.value}><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger><SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select>)} />{errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>}</div><div><Label htmlFor="date_of_birth">Date of Birth *</Label><Controller name="date_of_birth" control={control} render={({ field }) => (<Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>)} />{errors.date_of_birth && <p className="text-red-500 text-sm mt-1">{errors.date_of_birth.message}</p>}</div><div><Label htmlFor="birth_place">Place of Birth *</Label><Input id="birth_place" {...register('birth_place')} />{errors.birth_place && <p className="text-red-500 text-sm mt-1">{errors.birth_place.message}</p>}</div><div><Label htmlFor="aadhaar_no">Aadhaar No</Label><Input id="aadhaar_no" {...register('aadhaar_no')} />{errors.aadhaar_no && <p className="text-red-500 text-sm mt-1">{errors.aadhaar_no.message}</p>}</div></div></div>
-        <div className="border-t pt-6 space-y-6"><h3 className="text-lg font-medium">Academic & Social Details</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div><Label htmlFor="abc_number">ABC Number</Label><Input id="abc_number" {...register('abc_number')} />{errors.abc_number && <p className="text-red-500 text-sm mt-1">{errors.abc_number.message}</p>}</div><div><Label htmlFor="course_id">Course *</Label><Controller name="course_id" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger><SelectContent>{courses.map(course => <SelectItem key={course.id} value={course.id}>{course.course_name}</SelectItem>)}</SelectContent></Select>)} />{errors.course_id && <p className="text-red-500 text-sm mt-1">{errors.course_id.message}</p>}</div><div><Label htmlFor="class_id">Class *</Label><Controller name="class_id" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value} disabled={!selectedCourseId || classes.length === 0}><SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.class_name} {c.section && `- ${c.section}`}</SelectItem>)}</SelectContent></Select>)} />{errors.class_id && <p className="text-red-500 text-sm mt-1">{errors.class_id.message}</p>}</div><div><Label htmlFor="religion">Religion</Label><Input id="religion" {...register('religion')} /></div><div><Label htmlFor="caste">Caste</Label><Input id="caste" {...register('caste')} /></div><div><Label htmlFor="category">Category</Label><Input id="category" {...register('category')} /></div><div><Label htmlFor="mother_tongue">Mother Tongue</Label><Input id="mother_tongue" {...register('mother_tongue')} /></div></div></div>
+        <div className="border-t pt-6 space-y-6"><h3 className="text-lg font-medium">Academic & Social Details</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div><Label htmlFor="abc_number">ABC Number</Label><Input id="abc_number" {...register('abc_number')} />{errors.abc_number && <p className="text-red-500 text-sm mt-1">{errors.abc_number.message}</p>}</div><div><Label htmlFor="course_id">Course *</Label><Controller name="course_id" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger><SelectContent>{courses.map(course => <SelectItem key={course.id} value={String(course.id)}>{course.course_name}</SelectItem>)}</SelectContent></Select>)} />{errors.course_id && <p className="text-red-500 text-sm mt-1">{errors.course_id.message}</p>}</div><div><Label htmlFor="class_id">Class *</Label><Controller name="class_id" control={control} render={({ field }) => (<Select onValueChange={field.onChange} value={field.value} disabled={!selectedCourseId || classes.length === 0}><SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.class_name} {c.section && `- ${c.section}`}</SelectItem>)}</SelectContent></Select>)} />{errors.class_id && <p className="text-red-500 text-sm mt-1">{errors.class_id.message}</p>}</div><div><Label htmlFor="religion">Religion</Label><Input id="religion" {...register('religion')} /></div><div><Label htmlFor="caste">Caste</Label><Input id="caste" {...register('caste')} /></div><div><Label htmlFor="category">Category</Label><Input id="category" {...register('category')} /></div><div><Label htmlFor="mother_tongue">Mother Tongue</Label><Input id="mother_tongue" {...register('mother_tongue')} /></div></div></div>
         <div className="border-t pt-6 space-y-6"><h3 className="text-lg font-medium">Previous School Details (if applicable)</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-6"><div><Label htmlFor="previous_school_name">Previous School Name</Label><Input id="previous_school_name" {...register('previous_school_details.name')} /></div><div><Label htmlFor="previous_school_lc_no">Leaving Certificate No</Label><Input id="previous_school_lc_no" {...register('previous_school_details.leaving_certificate_no')} /></div><div><Label htmlFor="previous_school_leaving_date">Leaving Date</Label><Input type="date" id="previous_school_leaving_date" {...register('previous_school_details.leaving_date')} /></div></div></div>
         <div className="flex justify-end pt-4"><Button type="submit" disabled={loading || !instituteId}>{loading ? 'Submitting...' : 'Register Student'}</Button></div>
       </form>

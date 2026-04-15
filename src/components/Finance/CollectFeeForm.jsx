@@ -5,8 +5,7 @@ import * as z from 'zod';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-
-const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+import { API_BASE } from '@/lib/constants';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,6 +33,7 @@ const CollectFeeForm = ({ student, bill, onSuccess }) => {
       amount_paid: ''
     }
   });
+  const { ref: amountPaidRef, ...amountPaidField } = register('amount_paid');
 
   useEffect(() => {
     if (amountInputRef.current) {
@@ -64,7 +64,7 @@ const CollectFeeForm = ({ student, bill, onSuccess }) => {
           payment_mode: data.payment_mode,
           transaction_details: { ref: data.transaction_details },
           collected_by: user.id,
-          payment_date: new Date().toISOString()
+          payment_date: new Date().toISOString().slice(0, 10)
         })
       });
       
@@ -74,8 +74,8 @@ const CollectFeeForm = ({ student, bill, onSuccess }) => {
         toast({ variant: 'destructive', title: 'Payment Failed', description: transactionData.error || 'Failed to process payment' });
       } else {
         toast({ title: 'Success!', description: 'Fee collected successfully.' });
-        setLastTransactionId(transactionData.id);
-        setIsReceiptOpen(true);
+        setLastTransactionId(transactionData.transaction_id || transactionData.id || null);
+        if (onSuccess) onSuccess();
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: error.message || 'Network error occurred' });
@@ -105,8 +105,11 @@ const CollectFeeForm = ({ student, bill, onSuccess }) => {
               id="amount_paid" 
               type="number" 
               step="0.01"
-              {...register('amount_paid')} 
-              ref={amountInputRef}
+              {...amountPaidField}
+              ref={(element) => {
+                amountPaidRef(element);
+                amountInputRef.current = element;
+              }}
               placeholder="Enter amount"
               required 
             />

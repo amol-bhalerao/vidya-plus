@@ -4,8 +4,7 @@ import { useUser } from '@/contexts/UserContext';
 import { format } from 'date-fns';
 
 const UpcomingBirthdays = () => {
-    const user = useUser();
-    const instituteId = user?.institute_id;
+    const { instituteId } = useUser();
     const [birthdays, setBirthdays] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -16,7 +15,7 @@ const UpcomingBirthdays = () => {
         }
         setLoading(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+            const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
             const res = await fetch(`${apiBase}/students?institute_id=${instituteId}&status=active`, { credentials: 'include' });
             const data = await res.json();
             if (Array.isArray(data)) {

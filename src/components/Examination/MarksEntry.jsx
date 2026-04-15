@@ -108,12 +108,17 @@ const MarksEntry = ({ instituteId }) => {
         marksData = await marksResponse.json();
       }
 
+      const latestMarksByStudent = new Map();
+      (marksData || []).forEach(mark => {
+        latestMarksByStudent.set(String(mark.student_id), mark);
+      });
+
       const marksMap = {};
       studentsData.forEach(student => {
-        const mark = marksData?.find(m => m.student_id === student.id);
-        marksMap[student.id] = { 
-          marks_obtained: mark?.marks_obtained ?? '', 
-          is_absent: mark?.is_absent ?? false 
+        const mark = latestMarksByStudent.get(String(student.id));
+        marksMap[student.id] = {
+          marks_obtained: mark?.marks_obtained ?? '',
+          is_absent: mark?.is_absent ?? false
         };
       });
       setMarks(marksMap);
@@ -181,15 +186,15 @@ const MarksEntry = ({ instituteId }) => {
         <div className="flex gap-2 pt-4">
           <Select onValueChange={setSelectedExam} value={selectedExam} disabled={loading.exams}>
             <SelectTrigger><SelectValue placeholder="Select Exam" /></SelectTrigger>
-            <SelectContent>{exams.map(exam => <SelectItem key={exam.id} value={exam.id}>{exam.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{exams.map(exam => <SelectItem key={exam.id} value={String(exam.id)}>{exam.name}</SelectItem>)}</SelectContent>
           </Select>
           <Select onValueChange={setSelectedClass} value={selectedClass} disabled={!selectedExam || loading.classes}>
             <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
-            <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.class_name}{c.section && ` - ${c.section}`}</SelectItem>)}</SelectContent>
+            <SelectContent>{classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.class_name}{c.section && ` - ${c.section}`}</SelectItem>)}</SelectContent>
           </Select>
            <Select onValueChange={setSelectedSubject} value={selectedSubject} disabled={!selectedClass || loading.subjects}>
             <SelectTrigger><SelectValue placeholder="Select Subject" /></SelectTrigger>
-            <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.subject_name}</SelectItem>)}</SelectContent>
+            <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.subject_name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
       </CardHeader>
@@ -219,7 +224,7 @@ const MarksEntry = ({ instituteId }) => {
                         type="number"
                         value={marks[student.id]?.marks_obtained ?? ''}
                         onChange={e => handleMarkChange(student.id, e.target.value)}
-                        disabled={marks[student.id]?.is_absent}
+                        disabled={Boolean(marks[student.id]?.is_absent)}
                         max={timetableEntry.max_marks}
                         min={0}
                         className="w-24"
@@ -229,7 +234,7 @@ const MarksEntry = ({ instituteId }) => {
                       <div className="flex items-center space-x-2">
                         <Switch
                           id={`absent-${student.id}`}
-                          checked={marks[student.id]?.is_absent}
+                          checked={Boolean(marks[student.id]?.is_absent)}
                           onCheckedChange={checked => handleAbsenceChange(student.id, checked)}
                         />
                         <Label htmlFor={`absent-${student.id}`}>Mark as absent</Label>

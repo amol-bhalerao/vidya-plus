@@ -51,7 +51,7 @@ const TransactionHistory = ({ student, institute }) => {
     }, [student?.id, dateRange, API_BASE]);
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: `Student_Ledger_${student?.full_name}_${dateRange.from}_to_${dateRange.to}`,
     });
 

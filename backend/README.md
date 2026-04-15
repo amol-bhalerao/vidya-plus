@@ -33,11 +33,11 @@ npm run dev:php
 
 ## Database Configuration
 
-Default DB credentials in `db.php` are set to:
-- Server: `auth-db1234.hstgr.io:3306`
-- Database: `u441114691_vidya`
-- User: `u441114691_vidya`
-- Password: `Aarya@202112345`
+Default local DB settings are:
+- Server: `127.0.0.1:3306`
+- Database: `vidya_plus`
+- User: `root`
+- Password: empty by default for local setup
 
 ## Default User
 
@@ -47,10 +47,10 @@ A default super admin user is automatically created if it doesn't exist:
 
 ## Deployment Notes
 
-- Upload the `backend` folder to your Hostinger account. Ensure PHP version is compatible (7.4+ recommended).
+- Run the `backend` folder in any PHP-compatible local or server environment (PHP 7.4+ recommended).
 - Make `backend/uploads` writable (chmod 755/775 as needed).
-- Update `db.php` if Hostinger provides different DB user or host.
-- Frontend expects backend routes under `/backend/...`. If you deploy at a different path, update the frontend configuration.
+- Update `db.php` or environment variables if your DB user, password, or host differs.
+- Frontend expects the backend to be reachable via `VITE_API_BASE`; adjust that value if you deploy at a different URL.
 
 ## Frontend Integration
 

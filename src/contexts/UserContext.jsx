@@ -6,6 +6,7 @@ export const UserContext = createContext({
   isSuperAdmin: false,
   instituteId: null,
   loading: true,
+  setUser: (userData) => { },
   setInstituteId: (id) => { },
   handleLoginSuccess: (userData) => { },
   handleLogout: () => { },
@@ -18,6 +19,8 @@ export const UserProvider = ({ children }) => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [instituteId, setInstituteId] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const normalizeInstituteId = (id) => (id === undefined || id === null || id === '' ? null : String(id));
 
   // Fetch user data from session or local storage
   const fetchUserData = async () => {
@@ -51,13 +54,19 @@ export const UserProvider = ({ children }) => {
         // We have valid user data from the API
         console.log('[UserContext] Valid user data received from API:', data.user);
 
-        setUser(data.user);
-        setIsSuperAdmin(data.user.role === 'super_admin');
-        setInstituteId(data.user.institute_id || null);
+        const storedInstituteId = normalizeInstituteId(localStorage.getItem('selectedInstituteId'));
+        const resolvedInstituteId = storedInstituteId || normalizeInstituteId(data.user.institute_id);
+        const hydratedUser = data.user.role === 'super_admin' && resolvedInstituteId
+          ? { ...data.user, institute_id: resolvedInstituteId }
+          : data.user;
+
+        setUser(hydratedUser);
+        setIsSuperAdmin(hydratedUser.role === 'super_admin');
+        setInstituteId(resolvedInstituteId);
 
         // Update localStorage with fresh data
         try {
-          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('user', JSON.stringify(hydratedUser));
           console.log('[UserContext] User data updated in localStorage from API');
         } catch (e) {
           console.error('[UserContext] Error saving to localStorage:', e);
@@ -75,9 +84,15 @@ export const UserProvider = ({ children }) => {
             const parsedUser = JSON.parse(storedUser);
             console.log('[UserContext] Using fallback user data from localStorage:', parsedUser);
 
-            setUser(parsedUser);
-            setIsSuperAdmin(parsedUser.role === 'super_admin');
-            setInstituteId(parsedUser.institute_id || null);
+            const storedInstituteId = normalizeInstituteId(localStorage.getItem('selectedInstituteId'));
+            const resolvedInstituteId = storedInstituteId || normalizeInstituteId(parsedUser.institute_id);
+            const hydratedUser = parsedUser.role === 'super_admin' && resolvedInstituteId
+              ? { ...parsedUser, institute_id: resolvedInstituteId }
+              : parsedUser;
+
+            setUser(hydratedUser);
+            setIsSuperAdmin(hydratedUser.role === 'super_admin');
+            setInstituteId(resolvedInstituteId);
             setLoading(false);
             return true;
           } else {
@@ -105,9 +120,15 @@ export const UserProvider = ({ children }) => {
           const parsedUser = JSON.parse(storedUser);
           console.log('[UserContext] Using offline user data from localStorage:', parsedUser);
 
-          setUser(parsedUser);
-          setIsSuperAdmin(parsedUser.role === 'super_admin');
-          setInstituteId(parsedUser.institute_id || null);
+          const storedInstituteId = normalizeInstituteId(localStorage.getItem('selectedInstituteId'));
+          const resolvedInstituteId = storedInstituteId || normalizeInstituteId(parsedUser.institute_id);
+          const hydratedUser = parsedUser.role === 'super_admin' && resolvedInstituteId
+            ? { ...parsedUser, institute_id: resolvedInstituteId }
+            : parsedUser;
+
+          setUser(hydratedUser);
+          setIsSuperAdmin(hydratedUser.role === 'super_admin');
+          setInstituteId(resolvedInstituteId);
         }
       } catch (e) {
         console.error('[UserContext] Error reading from localStorage during fallback:', e);
@@ -129,14 +150,20 @@ export const UserProvider = ({ children }) => {
       console.log('[UserContext] Parsed user data:', parsedUserData);
 
       // Update state immediately
-      setUser(parsedUserData);
-      setIsSuperAdmin(parsedUserData.role === 'super_admin');
-      setInstituteId(parsedUserData.institute_id || null);
+      const storedInstituteId = normalizeInstituteId(localStorage.getItem('selectedInstituteId'));
+      const resolvedInstituteId = storedInstituteId || normalizeInstituteId(parsedUserData.institute_id);
+      const hydratedUser = parsedUserData.role === 'super_admin' && resolvedInstituteId
+        ? { ...parsedUserData, institute_id: resolvedInstituteId }
+        : parsedUserData;
+
+      setUser(hydratedUser);
+      setIsSuperAdmin(hydratedUser.role === 'super_admin');
+      setInstituteId(resolvedInstituteId);
       setLoading(false);
 
       // Store in localStorage for persistence
       try {
-        localStorage.setItem('user', JSON.stringify(parsedUserData));
+        localStorage.setItem('user', JSON.stringify(hydratedUser));
         console.log('[UserContext] User data saved to localStorage');
       } catch (storageError) {
         console.error('[UserContext] Error saving to localStorage:', storageError);
@@ -175,6 +202,7 @@ export const UserProvider = ({ children }) => {
       // Clear localStorage
       try {
         localStorage.removeItem('user');
+        localStorage.removeItem('selectedInstituteId');
         console.log('[UserContext] User removed from localStorage');
       } catch (e) {
         console.error('[UserContext] Error removing user from localStorage:', e);
@@ -198,9 +226,44 @@ export const UserProvider = ({ children }) => {
   };
 
   // Set institute for super admin
-  const handleSetInstituteId = (id) => {
-    console.log('[UserContext] Setting institute ID:', id);
-    setInstituteId(id);
+  const handleSetInstituteId = async (id) => {
+    const normalizedId = normalizeInstituteId(id);
+    console.log('[UserContext] Setting institute ID:', normalizedId);
+
+    setInstituteId(normalizedId);
+    setUser(prevUser => (prevUser ? { ...prevUser, institute_id: normalizedId } : prevUser));
+
+    try {
+      if (normalizedId) {
+        localStorage.setItem('selectedInstituteId', normalizedId);
+      } else {
+        localStorage.removeItem('selectedInstituteId');
+      }
+
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        localStorage.setItem('user', JSON.stringify({ ...parsedUser, institute_id: normalizedId }));
+      }
+    } catch (error) {
+      console.error('[UserContext] Failed to persist institute selection:', error);
+    }
+
+    if (user?.role === 'super_admin') {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
+        await fetch(`${apiBase}/auth/set-institute`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ institute_id: normalizedId }),
+        });
+      } catch (error) {
+        console.error('[UserContext] Failed to sync institute selection to backend:', error);
+      }
+    }
   };
 
   // Select institute (alias for setInstituteId for super admin)
@@ -220,6 +283,7 @@ export const UserProvider = ({ children }) => {
     isSuperAdmin,
     instituteId,
     loading,
+    setUser,
     setInstituteId: handleSetInstituteId,
     selectInstitute,
     handleLoginSuccess,

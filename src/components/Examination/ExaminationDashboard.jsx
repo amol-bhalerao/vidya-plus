@@ -93,7 +93,7 @@ const ExaminationDashboard = () => {
 
         {currentInstituteId ? (
           <Tabs defaultValue="timetable" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 lg:grid-cols-6">
+            <TabsList className="grid h-auto w-full grid-cols-1 gap-1 md:grid-cols-3 lg:grid-cols-6">
               <TabsTrigger value="timetable">Exam Timetable</TabsTrigger>
               <TabsTrigger value="syllabus">Syllabus</TabsTrigger>
               <TabsTrigger value="seating">Seating Plan</TabsTrigger>

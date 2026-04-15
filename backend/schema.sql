@@ -1,5 +1,11 @@
 -- Vidya Plus MySQL-compatible schema
 -- Uses INT AUTO_INCREMENT primary keys for compatibility with the PHP backend
+
+CREATE DATABASE IF NOT EXISTS vidya_plus
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+USE vidya_plus;
+
 SET FOREIGN_KEY_CHECKS = 0;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -83,6 +89,10 @@ CREATE TABLE IF NOT EXISTS students (
     admission_date DATE NOT NULL,
     status VARCHAR(50) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY students_institute_admission_no_unique (institute_id, admission_no),
+    UNIQUE KEY students_institute_gr_no_unique (institute_id, gr_no),
+    UNIQUE KEY students_institute_abc_number_unique (institute_id, abc_number),
+    UNIQUE KEY students_institute_aadhaar_no_unique (institute_id, aadhaar_no),
     CONSTRAINT students_institute_fk FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE,
     CONSTRAINT students_class_fk FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE SET NULL,
     CONSTRAINT students_course_fk FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE SET NULL
@@ -110,6 +120,15 @@ CREATE TABLE IF NOT EXISTS syllabus (
     CONSTRAINT syllabus_institute_fk FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE,
     CONSTRAINT syllabus_class_fk FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
     CONSTRAINT syllabus_subject_fk FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS exams (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    institute_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT exams_institute_fk FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS seating_arrangement (
@@ -397,16 +416,16 @@ CREATE TABLE IF NOT EXISTS exam_timetable (
     institute_id INT NOT NULL,
     exam_id INT NOT NULL,
     class_id INT NOT NULL,
-        subject_id INT DEFAULT NULL,
+    subject_id INT DEFAULT NULL,
     exam_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     max_marks INT NOT NULL,
     subjects JSON DEFAULT NULL,
     CONSTRAINT exam_timetable_institute_fk FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE,
-    CONSTRAINT exam_timetable_exam_fk FOREIGN KEY (exam_id) REFERENCES online_exams(id) ON DELETE CASCADE,
+    CONSTRAINT exam_timetable_exam_fk FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE,
     CONSTRAINT exam_timetable_class_fk FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
-        CONSTRAINT exam_timetable_subject_fk FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL
+    CONSTRAINT exam_timetable_subject_fk FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS exam_marks (
@@ -416,6 +435,7 @@ CREATE TABLE IF NOT EXISTS exam_marks (
     student_id INT NOT NULL,
     marks_obtained DECIMAL(8,2) DEFAULT NULL,
     is_absent BOOLEAN DEFAULT FALSE,
+    UNIQUE KEY exam_marks_timetable_student_unique (timetable_id, student_id),
     CONSTRAINT exam_marks_institute_fk FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE,
     CONSTRAINT exam_marks_timetable_fk FOREIGN KEY (timetable_id) REFERENCES exam_timetable(id) ON DELETE CASCADE,
     CONSTRAINT exam_marks_student_fk FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE

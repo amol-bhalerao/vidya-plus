@@ -7,6 +7,7 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
     header('Access-Control-Allow-Credentials: true');
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    header('Access-Control-Expose-Headers: Content-Type, X-Total-Count');
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
         http_response_code(200);
         exit;
@@ -15,12 +16,16 @@ if (isset($_SERVER['HTTP_ORIGIN'])) {
 
 // Start session with secure cookie params suitable for local dev
 if (session_status() === PHP_SESSION_NONE) {
+    $httpHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $cookieHost = preg_replace('/:\\d+$/', '', $httpHost);
+    $isLocalHost = in_array($cookieHost, ['localhost', '127.0.0.1'], true);
+
     // Configure session before starting
     ini_set('session.use_only_cookies', 1);
     ini_set('session.use_strict_mode', 0); // Allow session resumption
     ini_set('session.cookie_lifetime', 86400); // 1 day cookie lifetime
     ini_set('session.cookie_path', '/');
-    ini_set('session.cookie_domain', '.localhost'); // Domain prefix for localhost
+    ini_set('session.cookie_domain', $isLocalHost ? '' : $cookieHost);
     ini_set('session.cookie_secure', false); // Allow HTTP for local dev
     ini_set('session.cookie_httponly', 1);
     ini_set('session.cookie_samesite', 'Lax');
@@ -36,11 +41,11 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Local development database configuration
-$DB_HOST = 'localhost';
-$DB_PORT = '3306';
-$DB_NAME = 'vidya_plus';
-$DB_USER = 'root'; // Update with your local MySQL username
-$DB_PASS = ''; // Update with your local MySQL password
+$DB_HOST = getenv('DB_HOST') ?: '127.0.0.1';
+$DB_PORT = getenv('DB_PORT') ?: '3306';
+$DB_NAME = getenv('DB_NAME') ?: 'vidya_plus';
+$DB_USER = getenv('DB_USER') ?: 'root';
+$DB_PASS = getenv('DB_PASS') ?: '';
 
 // Production database configuration (uncomment for production)
 // $DB_HOST = 'auth-db1234.hstgr.io';

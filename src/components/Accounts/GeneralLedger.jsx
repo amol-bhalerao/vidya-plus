@@ -58,7 +58,7 @@ const GeneralLedger = ({ instituteId }) => {
         return { ...entry, balance: runningBalance };
     }).reverse();
     
-    const handlePrint = useReactToPrint({ content: () => printRef.current });
+    const handlePrint = useReactToPrint({ contentRef: printRef });
 
     return (
         <Card>

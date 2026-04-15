@@ -6,7 +6,7 @@
 
 // Allow overriding from Vite env (VITE_API_BASE). Default to 127.0.0.1 to avoid
 // possible localhost/IPv6 resolution issues on some dev machines.
-const API_BASE = (import.meta.env?.VITE_API_BASE) || 'http://127.0.0.1:8000';
+const API_BASE = (import.meta.env?.VITE_API_BASE) || 'http://localhost:8000';
 
 const auth = {
     signInWithPassword: async ({ email, password }) => {

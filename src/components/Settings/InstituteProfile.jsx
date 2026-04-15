@@ -76,6 +76,10 @@ const InstituteProfile = () => {
     };
   }, [logoPreview, logoFile]);
 
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, [name]: value }));
+  }, []);
 
   const handleNewInstituteNameChange = useCallback((e) => {
     setNewInstituteName(e.target.value);
@@ -160,10 +164,10 @@ const InstituteProfile = () => {
       toast({ title: 'Success!', description: `Institute '${newInstituteName}' created.` });
       setIsCreateOpen(false);
       setNewInstituteName('');
-      // Don't automatically select the new institute to avoid re-rendering issues
-      // if (isSuperAdmin && selectInstitute) {
-      //     selectInstitute(data.id); // Automatically select the new institute
-      // }
+      if (isSuperAdmin && selectInstitute) {
+        await selectInstitute(data.id);
+      }
+      await fetchProfile();
     } catch (error) {
       toast({ title: 'Error creating institute', description: error.message, variant: 'destructive' });
     }

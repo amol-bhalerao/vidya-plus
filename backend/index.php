@@ -11,9 +11,120 @@ if (strpos($path, $scriptName) === 0) {
 $path = strtok($path, '?');
 $path = trim($path, '/');
 
+$crudTables = [
+    'students',
+    'courses',
+    'classes',
+    'subjects',
+    'class_subjects',
+    'exams',
+    'exam_timetable',
+    'exam_marks',
+    'online_exams',
+    'online_exam_question_bank',
+    'online_exam_questions',
+    'student_online_exams',
+    'student_exam_answers',
+    'fee_groups',
+    'fee_group_items',
+    'fee_types',
+    'class_fees',
+    'class_fee_groups',
+    'fee_bills',
+    'fee_transactions',
+    'attendance',
+    'admission_inquiries',
+    'grade_settings',
+    'general_ledger',
+    'generated_documents',
+    'module_settings',
+    'syllabus',
+    'seating_arrangement'
+];
+
+$crudPath = strpos($path, 'crud/') === 0 ? substr($path, 5) : $path;
+$crudSegments = $crudPath === '' ? [] : explode('/', $crudPath);
+$tableCandidate = !empty($crudSegments) ? str_replace('-', '_', $crudSegments[0]) : '';
+
+if ($tableCandidate === 'institutes') {
+    require __DIR__ . '/institutes.php';
+    exit;
+}
+
+if ($tableCandidate === 'roles') {
+    require __DIR__ . '/roles.php';
+    exit;
+}
+
+if ($tableCandidate === 'employees') {
+    require __DIR__ . '/employees.php';
+    exit;
+}
+
+if ($tableCandidate === 'fee_receipts') {
+    if (count($crudSegments) >= 2 && is_numeric($crudSegments[1])) {
+        $_GET['transaction_id'] = $_GET['transaction_id'] ?? $crudSegments[1];
+    }
+    require __DIR__ . '/fee_receipts.php';
+    exit;
+}
+
+if ($tableCandidate && in_array($tableCandidate, $crudTables, true)) {
+    $tableName = $tableCandidate;
+
+    if (count($crudSegments) === 2 && is_numeric($crudSegments[1])) {
+        $_GET['id'] = $_GET['id'] ?? $crudSegments[1];
+    } elseif (count($crudSegments) > 1) {
+        $filterKeyMap = [
+            'class' => 'class_id',
+            'student' => 'student_id',
+            'exam' => 'exam_id',
+            'subject' => 'subject_id',
+            'institute' => 'institute_id',
+        ];
+
+        for ($i = 1; $i < count($crudSegments); $i++) {
+            $rawKey = str_replace('-', '_', $crudSegments[$i]);
+            $value = $crudSegments[$i + 1] ?? null;
+
+            if ($value === null) {
+                $_GET['__action'] = $_GET['__action'] ?? $rawKey;
+                break;
+            }
+
+            $key = $filterKeyMap[$rawKey] ?? $rawKey;
+            $_GET[$key] = $_GET[$key] ?? $value;
+            $i++;
+        }
+    }
+
+    require __DIR__ . '/crud.php';
+    exit;
+}
+
 // Handle institute routes with pattern matching
 if (preg_match('/^institutes(\/.*)?$/', $path)) {
     require __DIR__ . '/institutes.php';
+    exit;
+}
+
+if ($path === 'student-fee-bills') {
+    require __DIR__ . '/student_fee_bills.php';
+    exit;
+}
+
+if ($path === 'student-transactions') {
+    require __DIR__ . '/student_transactions.php';
+    exit;
+}
+
+if ($path === 'student-report-card') {
+    require __DIR__ . '/student_report_card.php';
+    exit;
+}
+
+if (strpos($path, 'finance/') === 0) {
+    require __DIR__ . '/finance.php';
     exit;
 }
 
@@ -56,6 +167,19 @@ switch ($path) {
         break;
     case 'uploads':
         require __DIR__ . '/uploads.php';
+        break;
+    case 'document-sequence':
+        require __DIR__ . '/document_sequence.php';
+        break;
+    case 'student-details':
+    case 'student_admission_details':
+        require __DIR__ . '/student_details.php';
+        break;
+    case 'promote_student':
+        require __DIR__ . '/promote_student.php';
+        break;
+    case 'upload-institute-logo':
+        require __DIR__ . '/upload_institute_logo.php';
         break;
     // Generic CRUD-backed tables
     case 'students':

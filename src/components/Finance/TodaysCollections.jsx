@@ -27,7 +27,7 @@ const TodaysCollections = ({ instituteId }) => {
 
             try {
                 // Fetch collections data from fee_transactions
-                const collectionsUrl = `${API_BASE}/fee_transactions?institute_id=${encodeURIComponent(instituteId)}&payment_date=${encodeURIComponent(selectedDate)}`;
+                const collectionsUrl = `${API_BASE}/fee_transactions?institute_id=${encodeURIComponent(instituteId)}&payment_date=${encodeURIComponent(selectedDate)}&include=students,fee_bills&sort=created_at&order=desc`;
                 const collectionsRes = await fetch(collectionsUrl, {
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' }
@@ -70,11 +70,11 @@ const TodaysCollections = ({ instituteId }) => {
     }, [instituteId, selectedDate, API_BASE]);
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: `Collection_Report_${selectedDate}`,
     });
 
-    const totalCollected = collections.reduce((sum, item) => sum + item.amount_paid, 0);
+    const totalCollected = collections.reduce((sum, item) => sum + (Number.parseFloat(item.amount_paid) || 0), 0);
 
     return (
         <Card>
@@ -115,20 +115,26 @@ const TodaysCollections = ({ instituteId }) => {
                             <TableBody>
                                 {loading && <TableRow><TableCell colSpan="6" className="text-center">Loading...</TableCell></TableRow>}
                                 {!loading && collections.length === 0 && <TableRow><TableCell colSpan="6" className="text-center">No collections on {format(new Date(selectedDate), 'PPP')}.</TableCell></TableRow>}
-                                {!loading && collections.map(col => (
+                                {!loading && collections.map(col => {
+                                    const amountPaid = Number.parseFloat(col.amount_paid) || 0;
+                                    const studentName = col.students?.full_name || col.student_full_name || 'Unknown Student';
+                                    const grNo = col.students?.gr_no || col.student_gr_no || col.students?.admission_no || col.student_admission_no || 'N/A';
+                                    const billName = col.fee_bills?.bill_name || col.fee_bill_name || 'Fee Bill';
+
+                                    return (
                                     <TableRow key={col.id}>
-                                        <TableCell>{col.students.full_name} ({col.students.gr_no})</TableCell>
-                                        <TableCell>{col.fee_bills.bill_name}</TableCell>
+                                        <TableCell>{studentName} ({grNo})</TableCell>
+                                        <TableCell>{billName}</TableCell>
                                         <TableCell className="capitalize">{col.payment_mode}</TableCell>
                                         <TableCell>{format(new Date(col.payment_date), 'dd MMM, yyyy')}</TableCell>
-                                        <TableCell className="text-right font-medium">₹{col.amount_paid.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-medium">₹{amountPaid.toFixed(2)}</TableCell>
                                         <TableCell className="text-right print-hidden">
                                             <Button variant="ghost" size="sm" onClick={() => setPrintingReceiptId(col.id)}>
                                                 <Printer className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )})}
                             </TableBody>
                         </Table>
                         <div className="text-right font-bold text-lg mt-4 pr-4">

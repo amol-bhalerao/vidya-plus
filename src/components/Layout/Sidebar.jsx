@@ -32,11 +32,10 @@ const NavItem = ({ item, isSidebarOpen }) => {
 
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
-  const user = useUser();
+  const { user, handleLogout } = useUser();
   // For now, super admin always sees all modules
   const isSuperAdmin = user?.role === 'super_admin';
-  // TODO: Add signOut logic if needed
-  const signOut = () => { window.location.href = '/admin/login'; };
+  const signOut = async () => { await handleLogout(); };
 
   const visibleMenuItems = isSuperAdmin
     ? menuItems // Show all modules for super admin

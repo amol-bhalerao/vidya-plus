@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUser } from '@/contexts/UserContext';
 import { useToast } from '@/components/ui/use-toast';
-
-const API_BASE = '/api/v1';
+import { API_BASE } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +16,7 @@ import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 const miscPaymentSchema = z.object({
-  fee_type_id: z.string().uuid("Fee type is required"),
+  fee_type_id: z.string().min(1, "Fee type is required"),
   amount_paid: z.coerce.number().positive("Amount must be positive"),
   payment_mode: z.enum(['cash', 'card', 'upi', 'bank_transfer', 'cheque']),
   transaction_details: z.string().optional(),

@@ -90,7 +90,7 @@ const BalanceSheet = ({ instituteId }) => {
         if (instituteId && selectedYearId) fetchBalanceSheetData();
     }, [instituteId, selectedYearId, fetchBalanceSheetData]);
 
-    const handlePrint = useReactToPrint({ content: () => printRef.current });
+    const handlePrint = useReactToPrint({ contentRef: printRef });
     
     const handleYearEndReset = () => {
         setShowCloseDialog(true);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
+import { useReactToPrint } from 'react-to-print';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
@@ -35,9 +36,10 @@ const ExamResultsPrint = () => {
         fetchResults();
     }, [examId, toast, navigate]);
 
-    const handlePrint = () => {
-        window.print();
-    };
+    const handlePrint = useReactToPrint({
+        contentRef: printRef,
+        documentTitle: resultsData ? `${resultsData.exam.title}_consolidated_marksheet` : 'exam-results',
+    });
     
     if (loading) return <div>Loading results for printing...</div>;
     if (!resultsData) return <div>No results found.</div>;
@@ -49,7 +51,7 @@ const ExamResultsPrint = () => {
                 <p>Printing results for: {resultsData.exam.title}</p>
                 <Button onClick={handlePrint} className="mt-4"><Printer className="mr-2 h-4 w-4" /> Print Results</Button>
             </div>
-            <div ref={printRef} className="a4-page font-sans text-black">
+            <div ref={printRef} className="a4-page print-sheet font-sans text-black">
                 <div className="text-center mb-6">
                     <h1 className="text-2xl font-bold">{resultsData.exam.title}</h1>
                     <p className="text-lg">Consolidated Marksheet</p>

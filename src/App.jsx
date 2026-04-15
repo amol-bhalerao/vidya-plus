@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProvider, useUser } from '@/contexts/UserContext';
+import { useUser } from '@/contexts/UserContext';
 import { Helmet } from 'react-helmet-async';
 import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,15 +13,6 @@ import AdminLayout from '@/components/Admin/AdminLayout';
 import Dashboard from '@/components/Admin/Dashboard';
 import LoginForm from '@/components/Auth/LoginForm';
 import AuthTestPage from './pages/AuthTestPage';
-
-// Move UserProvider outside main App component
-const AppWithProviders = ({ children }) => {
-  return (
-    <UserProvider>
-      {children}
-    </UserProvider>
-  );
-};
 
 const App = () => {
   const { user, loading, setUser } = useUser();
@@ -39,7 +30,6 @@ const App = () => {
   }
 
   return (
-    <AppWithProviders>
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 pattern-bg">
         <Helmet>
           <title>Vidya+ College Management System</title>
@@ -92,7 +82,6 @@ const App = () => {
             <Route path="/" element={<Navigate to="/home" replace />} />
           </Routes>
       </div>
-    </AppWithProviders>
   );
 };
 

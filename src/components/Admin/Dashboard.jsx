@@ -7,7 +7,7 @@ import QuickActions from '@/components/Dashboard/QuickActions';
 import UpcomingBirthdays from '@/components/Dashboard/UpcomingBirthdays';
 
 const Dashboard = () => {
-    const user = useUser();
+    const { user } = useUser();
 
     return (
         <motion.div

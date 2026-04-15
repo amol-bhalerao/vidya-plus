@@ -27,7 +27,7 @@ import ModuleContent from '@/components/Modules/ModuleContent';
 const AdminLayout = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const location = useLocation();
-    const { user, loading } = useUser();
+    const { user, loading, instituteId } = useUser();
 
     // If not logged in, redirect to login
     if (!loading && !user) {
@@ -50,8 +50,8 @@ const AdminLayout = () => {
                             <Route index element={<Dashboard />} />
                             <Route path="admission" element={<AdmissionDashboard />} />
                             <Route path="students" element={<StudentManagementDashboard />} />
-                            <Route path="students/add" element={<AddNewStudent />} />
-                            <Route path="students/edit/:id" element={<EditStudent />} />
+                            <Route path="students/add" element={<AddNewStudent instituteId={instituteId || user?.institute_id} />} />
+                            <Route path="students/edit/:id" element={<EditStudent instituteId={instituteId || user?.institute_id} />} />
                             <Route path="finance" element={<FinanceDashboard />} />
                             <Route path="finance/collect" element={<FeeCollectionPage />} />
                             <Route path="attendance" element={<AttendanceDashboard />} />

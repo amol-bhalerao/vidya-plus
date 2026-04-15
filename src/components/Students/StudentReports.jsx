@@ -73,7 +73,7 @@ const StudentReports = ({ instituteId }) => {
                 return acc;
             }, {});
 
-            setReports({ byCaste: processData(s => s.caste), byGender: processData(s => s.gender), byCourse: processData(s => s.courses?.course_name), byAge: Object.entries(ageGroups).map(([name, value]) => ({ name, value })) });
+            setReports({ byCaste: processData(s => s.caste), byGender: processData(s => s.gender), byCourse: processData(s => s.course_name || s.courses?.course_name || s.classes?.courses?.course_name), byAge: Object.entries(ageGroups).map(([name, value]) => ({ name, value })) });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error fetching reports', description: error.message });
         } finally {
@@ -85,7 +85,7 @@ const StudentReports = ({ instituteId }) => {
         fetchReports();
     }, [fetchReports]);
 
-    const handlePrint = useReactToPrint({ content: () => printRef.current });
+    const handlePrint = useReactToPrint({ contentRef: printRef });
 
     if (loading) return <p>Loading reports...</p>;
 

@@ -6,8 +6,7 @@ import InstituteSelector from './InstituteSelector';
 import { useUser } from '@/contexts/UserContext';
 
 const Header = ({ onToggleSidebar }) => {
-  const user = useUser();
-  const isSuperAdmin = user?.role === 'super_admin';
+  const { isSuperAdmin } = useUser();
 
   return (
     <header className="flex items-center justify-between p-4 bg-white/70 backdrop-blur-sm border-b border-gray-200/80 sticky top-0 z-10">

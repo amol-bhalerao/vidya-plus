@@ -244,15 +244,15 @@ const ExamTimetable = ({ instituteId }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 pt-4">
           <Select onValueChange={setSelectedExam} value={selectedExam || ''}>
             <SelectTrigger><SelectValue placeholder="Select Exam" /></SelectTrigger>
-            <SelectContent>{exams.map(exam => <SelectItem key={exam.id} value={exam.id}>{exam.name}</SelectItem>)}</SelectContent>
+            <SelectContent>{exams.map(exam => <SelectItem key={exam.id} value={String(exam.id)}>{exam.name}</SelectItem>)}</SelectContent>
           </Select>
           <Select onValueChange={setSelectedCourse} value={selectedCourse || ''} disabled={!selectedExam}>
             <SelectTrigger><SelectValue placeholder="Select Course" /></SelectTrigger>
-            <SelectContent>{courses.map(c => <SelectItem key={c.id} value={c.id}>{c.course_name}</SelectItem>)}</SelectContent>
+            <SelectContent>{courses.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.course_name}</SelectItem>)}</SelectContent>
           </Select>
           <Select onValueChange={setSelectedClass} value={selectedClass || ''} disabled={!selectedCourse}>
             <SelectTrigger><SelectValue placeholder="Select Class" /></SelectTrigger>
-            <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.class_name}{c.section && ` - ${c.section}`}</SelectItem>)}</SelectContent>
+            <SelectContent>{classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.class_name}{c.section && ` - ${c.section}`}</SelectItem>)}</SelectContent>
           </Select>
           <Dialog open={isExamDialogOpen} onOpenChange={setIsExamDialogOpen}>
             <DialogTrigger asChild><Button>Create New Exam</Button></DialogTrigger>
@@ -277,7 +277,7 @@ const ExamTimetable = ({ instituteId }) => {
                       <Label htmlFor="subject" className="text-right">Subject</Label>
                       <Select value={currentTimetableEntry?.subject_id} onValueChange={(val) => setCurrentTimetableEntry(p => ({ ...p, subject_id: val }))}>
                         <SelectTrigger className="col-span-3"><SelectValue placeholder="Select Subject" /></SelectTrigger>
-                        <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.subject_name}</SelectItem>)}</SelectContent>
+                        <SelectContent>{subjects.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.subject_name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">

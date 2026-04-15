@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const apiBase = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
 
 const InstituteSelector = () => {
     const { instituteId, setInstituteId } = useUser();
@@ -19,7 +19,7 @@ const InstituteSelector = () => {
                 const list = Array.isArray(data) ? data : [];
                 setInstitutes(list);
                 if (list.length > 0 && !instituteId && setInstituteId) {
-                    setInstituteId(list[0].id);
+                    setInstituteId(String(list[0].id));
                 }
             } catch (e) {
                 console.error('Error fetching institutes:', e.message || e);
@@ -39,7 +39,7 @@ const InstituteSelector = () => {
                 </SelectTrigger>
                 <SelectContent>
                         {(institutes || []).map(inst => (
-                            <SelectItem key={inst.id} value={inst.id}>{inst.name}</SelectItem>
+                            <SelectItem key={inst.id} value={String(inst.id)}>{inst.name}</SelectItem>
                         ))}
                 </SelectContent>
             </Select>

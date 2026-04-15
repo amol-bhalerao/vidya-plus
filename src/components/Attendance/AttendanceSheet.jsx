@@ -34,7 +34,8 @@ const AttendanceSheet = ({ classId, date, instituteId }) => {
       }
 
       const studentsData = await studentsResponse.json();
-      setStudents(studentsData.data || []);
+      const studentRows = Array.isArray(studentsData) ? studentsData : (studentsData.data || []);
+      setStudents(studentRows);
 
       // Fetch existing attendance for that day
       const attendanceResponse = await fetch(`${API_BASE}/attendance/class/${classId}/date/${formattedDate}`, {
@@ -45,11 +46,10 @@ const AttendanceSheet = ({ classId, date, instituteId }) => {
       const initialAttendance = {};
       if (attendanceResponse.ok) {
         const attendanceData = await attendanceResponse.json();
-        if (attendanceData.data) {
-          attendanceData.data.forEach(att => {
-            initialAttendance[att.student_id] = att.status;
-          });
-        }
+        const attendanceRows = Array.isArray(attendanceData) ? attendanceData : (attendanceData.data || []);
+        attendanceRows.forEach(att => {
+          initialAttendance[att.student_id] = att.status;
+        });
       }
 
       setAttendance(initialAttendance);
@@ -110,13 +110,13 @@ const AttendanceSheet = ({ classId, date, instituteId }) => {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/attendance/save`, {
+      const response = await fetch(`${API_BASE}/attendance/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({ records: recordsToSave })
+        body: JSON.stringify({ items: recordsToSave })
       });
 
       if (!response.ok) {

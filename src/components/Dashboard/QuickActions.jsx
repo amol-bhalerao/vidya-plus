@@ -9,8 +9,7 @@ import { useUser } from '@/contexts/UserContext';
 
 const QuickActions = () => {
   const navigate = useNavigate();
-  const user = useUser();
-  const instituteId = user?.institute_id;
+  const { instituteId } = useUser();
   const [isAdmissionFormOpen, setIsAdmissionFormOpen] = useState(false);
 
   const actions = [

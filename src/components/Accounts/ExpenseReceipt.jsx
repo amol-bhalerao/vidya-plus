@@ -58,7 +58,7 @@ const ExpenseReceipt = ({ expenseId }) => {
         fetchReceiptData();
     }, [expenseId, API_BASE]);
     
-    const handlePrint = useReactToPrint({ content: () => componentRef.current });
+    const handlePrint = useReactToPrint({ contentRef: componentRef });
 
     if (loading) return <div>Loading receipt...</div>;
     if (!expense) return <div>Receipt not found.</div>;

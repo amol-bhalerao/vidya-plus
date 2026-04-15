@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { useUser } from '@/contexts/UserContext';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useReactToPrint } from 'react-to-print';
 import CollectFeeForm from '../Finance/CollectFeeForm';
 import TransferCertificate from './TransferCertificate';
 import BonafideCertificate from './BonafideCertificate';
@@ -60,7 +61,7 @@ const InputDialog = ({ onGenerate, onCancel, title, fields }) => {
 const DocumentsDashboard = () => {
   const { instituteId, user } = useUser();
   const { toast } = useToast();
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState('');
   const [classes, setClasses] = useState([]);
@@ -76,6 +77,7 @@ const DocumentsDashboard = () => {
   const [activeCertificate, setActiveCertificate] = useState(null);
   const [documentSequence, setDocumentSequence] = useState(null);
   const [certificateProps, setCertificateProps] = useState({});
+  const printRef = useRef(null);
 
   const ActiveCertificateComponent = activeCertificate ? certificateComponents[activeCertificate]?.component : null;
 
@@ -238,7 +240,11 @@ const DocumentsDashboard = () => {
     const certName = inputDialogConfig.title.includes('Transfer') ? 'Transfer Certificate' : 'Bonafide Certificate';
     setShowInputDialog(false); proceedWithGeneration(certName, formData);
   };
-  const handlePrint = () => window.print();
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: studentData && activeCertificate ? `${studentData.full_name}_${activeCertificate.replace(/\s+/g, '_')}` : 'student-document',
+  });
 
   return (
     <>
@@ -250,7 +256,16 @@ const DocumentsDashboard = () => {
       </motion.div>
       {showDuesDialog && studentData && <DuesDialog dues={outstandingDues} student={studentData} onDuesCleared={checkDues} />}
       {showInputDialog && <InputDialog onGenerate={handleInputFormSubmit} onCancel={() => setShowInputDialog(false)} {...inputDialogConfig} />}
-      {ActiveCertificateComponent && studentData && documentSequence && (<div id="printable-area"><div className="print-hidden p-4 bg-gray-100 flex justify-end"><Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print Document</Button></div><ActiveCertificateComponent student={studentData} sequenceNumber={documentSequence} {...certificateProps} /></div>)}
+      {ActiveCertificateComponent && studentData && documentSequence && (
+        <div className="printable-area">
+          <div className="print-hidden p-4 bg-gray-100 flex justify-end">
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Print Document</Button>
+          </div>
+          <div id="printable-area" ref={printRef} className="print-sheet">
+            <ActiveCertificateComponent student={studentData} sequenceNumber={documentSequence} {...certificateProps} />
+          </div>
+        </div>
+      )}
     </>
   );
 };

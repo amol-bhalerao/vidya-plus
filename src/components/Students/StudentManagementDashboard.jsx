@@ -10,22 +10,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useUser } from '@/contexts/UserContext';
+import StudentReports from '@/components/Students/StudentReports';
 
 const PAGE_SIZE = 10;
 
 const StudentManagementDashboard = () => {
   const navigate = useNavigate();
-  const { user, loading: userLoading } = useUser();
+  const { user, instituteId, loading: userLoading } = useUser();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [count, setCount] = useState(0);
-  const instituteId = user?.institute_id || null;
+  const activeInstituteId = instituteId || user?.institute_id || null;
 
   const fetchStudents = useCallback(async () => {
-    if (!instituteId || userLoading) {
+    if (!activeInstituteId || userLoading) {
       setLoading(false);
       setStudents([]);
       setCount(0);
@@ -34,9 +35,9 @@ const StudentManagementDashboard = () => {
 
     setLoading(true);
     try {
-      const API_BASE = import.meta.env?.VITE_API_BASE || 'http://127.0.0.1:8000';
+      const API_BASE = import.meta.env?.VITE_API_BASE || 'http://localhost:8000';
       const params = new URLSearchParams();
-      params.append('institute_id', instituteId);
+      params.append('institute_id', activeInstituteId);
       params.append('limit', PAGE_SIZE.toString());
       params.append('offset', ((page - 1) * PAGE_SIZE).toString());
       params.append('sort', 'full_name');
@@ -56,9 +57,10 @@ const StudentManagementDashboard = () => {
       }
 
       const data = await res.json();
-      // The CRUD API returns data directly as an array
-      setStudents(Array.isArray(data) ? data : []);
-      setCount(Array.isArray(data) ? data.length : 0);
+      const rows = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      const totalCount = Number(res.headers.get('X-Total-Count') || rows.length || 0);
+      setStudents(rows);
+      setCount(totalCount);
     } catch (error) {
       console.error("Error fetching students:", error);
       setStudents([]);
@@ -66,7 +68,7 @@ const StudentManagementDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [instituteId, page, searchTerm, userLoading]);
+  }, [activeInstituteId, page, searchTerm, userLoading]);
 
   useEffect(() => {
     fetchStudents();
@@ -106,7 +108,7 @@ const StudentManagementDashboard = () => {
                 <BulkUploadStudents instituteId={instituteId} onUploadComplete={() => { setIsBulkUploadOpen(false); fetchStudents(); }} />
               </DialogContent>
             </Dialog>
-            <Button onClick={() => navigate('/dashboard/students/add')} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"><PlusCircle className="mr-2 h-4 w-4" />Add New Student</Button>
+            <Button onClick={() => navigate('/admin/students/add')} className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"><PlusCircle className="mr-2 h-4 w-4" />Add New Student</Button>
           </div>
         </div>
 
@@ -120,10 +122,10 @@ const StudentManagementDashboard = () => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search by name, GR No, Admission No..." value={searchTerm} onChange={handleSearch} className="pl-10" />
             </div>
-            <StudentList students={students} loading={loading} onRefresh={fetchStudents} instituteId={instituteId} page={page} count={count} pageSize={PAGE_SIZE} onPageChange={handlePageChange} />
+            <StudentList students={students} loading={loading} onRefresh={fetchStudents} instituteId={activeInstituteId} page={page} count={count} pageSize={PAGE_SIZE} onPageChange={handlePageChange} />
           </TabsContent>
           <TabsContent value="reports" className="mt-4">
-            <StudentReports instituteId={instituteId} />
+            <StudentReports instituteId={activeInstituteId} />
           </TabsContent>
         </Tabs>
       </motion.div>

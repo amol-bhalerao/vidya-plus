@@ -46,11 +46,11 @@ const TodaysCollections = ({ instituteId }) => {
     }, [instituteId]);
     
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: `Daily_Collection_Report_${format(new Date(), 'yyyy-MM-dd')}`,
     });
 
-    const totalCollected = collections.reduce((sum, item) => sum + item.amount_paid, 0);
+    const totalCollected = collections.reduce((sum, item) => sum + (Number.parseFloat(item.amount_paid) || 0), 0);
 
     return (
         <Card>
@@ -83,19 +83,25 @@ const TodaysCollections = ({ instituteId }) => {
                             <TableBody>
                                 {loading && <TableRow><TableCell colSpan="5" className="text-center">Loading...</TableCell></TableRow>}
                                 {!loading && collections.length === 0 && <TableRow><TableCell colSpan="5" className="text-center">No collections today.</TableCell></TableRow>}
-                                {!loading && collections.map(col => (
+                                {!loading && collections.map(col => {
+                                    const amountPaid = Number.parseFloat(col.amount_paid) || 0;
+                                    const studentName = col.students?.full_name || col.student_full_name || 'Unknown Student';
+                                    const grNo = col.students?.gr_no || col.student_gr_no || col.students?.admission_no || col.student_admission_no || 'N/A';
+                                    const billName = col.fee_bills?.bill_name || col.fee_bill_name || 'Fee Bill';
+
+                                    return (
                                     <TableRow key={col.id}>
-                                        <TableCell>{col.students.full_name} ({col.students.gr_no})</TableCell>
-                                        <TableCell>{col.fee_bills.bill_name}</TableCell>
+                                        <TableCell>{studentName} ({grNo})</TableCell>
+                                        <TableCell>{billName}</TableCell>
                                         <TableCell className="capitalize">{col.payment_mode}</TableCell>
-                                        <TableCell className="text-right font-medium">₹{col.amount_paid.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-medium">₹{amountPaid.toFixed(2)}</TableCell>
                                         <TableCell className="text-right print-hidden">
                                             <Button variant="ghost" size="sm" onClick={() => setPrintingReceiptId(col.id)}>
                                                 <Printer className="h-4 w-4" />
                                             </Button>
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                )})}
                             </TableBody>
                         </Table>
                     </div>

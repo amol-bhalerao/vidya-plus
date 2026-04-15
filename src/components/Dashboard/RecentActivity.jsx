@@ -8,8 +8,7 @@ import { ScrollArea } from '../ui/scroll-area';
 
 
 const RecentActivity = () => {
-  const user = useUser();
-  const instituteId = user?.institute_id;
+  const { instituteId } = useUser();
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,7 +27,7 @@ const RecentActivity = () => {
     }
     setLoading(true);
     try {
-  const apiBase = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+  const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
   const res = await fetch(`${apiBase}/general_ledger?institute_id=${instituteId}`, { credentials: 'include' });
       const data = await res.json();
       setActivities(Array.isArray(data) ? data.filter(a => ['fee_collection','student_admission','expense_payment'].includes(a.transaction_type)).sort((a,b) => new Date(b.created_at)-new Date(a.created_at)).slice(0,10) : []);

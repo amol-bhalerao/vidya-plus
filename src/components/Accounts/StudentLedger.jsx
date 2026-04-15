@@ -40,7 +40,7 @@ const StudentLedger = ({ instituteId }) => {
     const printRef = useRef();
 
     const handlePrint = useReactToPrint({
-        content: () => printRef.current,
+        contentRef: printRef,
         documentTitle: `${selectedStudent?.full_name || 'Student'} Ledger`,
     });
   

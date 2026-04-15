@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash, School, FileText } from 'lucide-react';
+import { Edit, Trash, School, FileText, Printer } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
@@ -117,6 +117,7 @@ const PromoteStudentDialog = ({ student, onPromoted, onCancel }) => {
 
 const StudentList = ({ students, loading, onRefresh, page, count, pageSize, onPageChange }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [promotingStudent, setPromotingStudent] = useState(null);
   const [completedActionStudent, setCompletedActionStudent] = useState(null);
 
@@ -143,28 +144,30 @@ const StudentList = ({ students, loading, onRefresh, page, count, pageSize, onPa
       toast({ variant: "destructive", title: "Error", description: 'Failed to deactivate student' });
     }
   };
-  
-  const onPromoteSuccess = async (studentId) => {
+
+  const openAdmissionForm = async (studentId) => {
     try {
       const response = await fetch(`${API_BASE}/student_admission_details?student_id=${studentId}`, {
         method: 'GET',
         credentials: 'include'
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch student details');
       }
-      
+
       const studentWithDetails = await response.json();
       setCompletedActionStudent(studentWithDetails);
-      setPromotingStudent(null);
-      onRefresh();
     } catch (error) {
       console.error('Error fetching student details:', error);
-      toast({ variant: "destructive", title: "Error", description: 'Failed to fetch student details' });
-      setPromotingStudent(null);
-      onRefresh();
+      toast({ variant: "destructive", title: "Error", description: 'Failed to load admission form preview' });
     }
+  };
+  
+  const onPromoteSuccess = async (studentId) => {
+    setPromotingStudent(null);
+    await openAdmissionForm(studentId);
+    onRefresh();
   }
 
   const getStatusVariant = (status) => {
@@ -190,12 +193,13 @@ const StudentList = ({ students, loading, onRefresh, page, count, pageSize, onPa
             <TableRow key={student.id}>
               <TableCell>{student.gr_no}</TableCell>
               <TableCell className="font-medium">{student.full_name}</TableCell>
-              <TableCell>{student.courses?.course_name || 'N/A'}</TableCell>
-              <TableCell>{student.classes?.class_name || 'N/A'}</TableCell>
+              <TableCell>{student.course_name || student.courses?.course_name || student.classes?.courses?.course_name || 'N/A'}</TableCell>
+              <TableCell>{student.class_name || student.classes?.class_name || 'N/A'}</TableCell>
               <TableCell><span className={`px-2 py-1 text-xs rounded-full capitalize ${getStatusVariant(student.status)}`}>{student.status.replace('_', ' ')}</span></TableCell>
               <TableCell className="text-right">
                 <Button variant="ghost" size="sm" onClick={() => setPromotingStudent(student)} title="Promote" disabled={student.status !== 'active'}><School className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="sm" onClick={() => navigate(`/dashboard/students/edit/${student.id}`)} title="Edit"><Edit className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => openAdmissionForm(student.id)} title="Preview / Print Admission Form"><Printer className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/students/edit/${student.id}`)} title="Edit"><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="sm" onClick={() => handleDeactivate(student)} title="Deactivate"><Trash className="h-4 w-4 text-red-500" /></Button>
               </TableCell>
             </TableRow>
@@ -212,23 +216,12 @@ const StudentList = ({ students, loading, onRefresh, page, count, pageSize, onPa
       <Dialog open={!!promotingStudent} onOpenChange={() => setPromotingStudent(null)}>{promotingStudent && <PromoteStudentDialog student={promotingStudent} onPromoted={onPromoteSuccess} onCancel={() => setPromotingStudent(null)} />}</Dialog>
       
       <Dialog open={!!completedActionStudent} onOpenChange={() => setCompletedActionStudent(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-                <DialogTitle>Action Successful</DialogTitle>
-                <DialogDescription>Student {completedActionStudent?.student.full_name} has been promoted.</DialogDescription>
+                <DialogTitle>Admission Form Preview</DialogTitle>
+                <DialogDescription>Review and print the admission form for {completedActionStudent?.student?.full_name}.</DialogDescription>
             </DialogHeader>
-            <DialogFooter className="gap-2">
-                <Dialog>
-                    <DialogTrigger asChild><Button><FileText className="mr-2 h-4 w-4"/> Print Admission Form</Button></DialogTrigger>
-                    <DialogContent className="sm:max-w-4xl">
-                        <DialogHeader>
-                            <DialogTitle>Admission Form</DialogTitle>
-                            <DialogDescription>Printable admission form for the student.</DialogDescription>
-                        </DialogHeader>
-                        <AdmissionFormPrint studentData={completedActionStudent} />
-                    </DialogContent>
-                </Dialog>
-            </DialogFooter>
+            {completedActionStudent && <AdmissionFormPrint studentData={completedActionStudent} />}
         </DialogContent>
       </Dialog>
     </div>

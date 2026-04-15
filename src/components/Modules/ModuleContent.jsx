@@ -29,18 +29,18 @@ const moduleConfigData = {
 
 
 const ModuleContent = ({ module }) => {
-  const user = useUser();
+  const { user, instituteId } = useUser();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const handleFeatureClick = (featureName, moduleName) => {
     if (moduleName === 'attendance' && featureName === 'Daily Attendance') {
-      navigate('/attendance');
+      navigate('/admin/attendance');
       return;
     }
 
     if (moduleName === 'documents') {
-      navigate('/documents', { state: { feature: featureName } });
+      navigate('/admin/documents', { state: { feature: featureName } });
       return;
     }
 
@@ -50,7 +50,7 @@ const ModuleContent = ({ module }) => {
     });
   };
 
-  const instituteId = user?.institute_id;
+  const activeInstituteId = instituteId || user?.institute_id || null;
   const config = moduleConfigData[module];
 
   if (module === 'dashboard') {
@@ -76,7 +76,7 @@ const ModuleContent = ({ module }) => {
   }
   
   const isStudentModule = module === 'students';
-  const canSeeBulkUpload = isStudentModule && user?.role !== 'super_admin' && instituteId;
+  const canSeeBulkUpload = isStudentModule && user?.role !== 'super_admin' && activeInstituteId;
 
   return (
     <motion.div
@@ -89,7 +89,7 @@ const ModuleContent = ({ module }) => {
         <p className="text-blue-100">{config.description}</p>
       </div>
 
-      {canSeeBulkUpload && <BulkUploadStudents instituteId={instituteId} />}
+      {canSeeBulkUpload && <BulkUploadStudents instituteId={activeInstituteId} />}
       
       {module === 'settings' && user?.role === 'super_admin' && (
         <Card className="card-hover bg-white/80 backdrop-blur-sm border-white/20">

@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
   const [institute, setInstitute] = useState(null);
   const [moduleVisibility, setModuleVisibility] = useState({});
 
-  const apiBase = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+  const apiBase = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
 
   const fetchModuleSettings = useCallback(async (currentInstituteId) => {
     // Minimal placeholder: module settings are optional; leave empty for now.

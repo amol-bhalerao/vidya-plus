@@ -162,4 +162,4 @@ npm test
 
 ## Deployment
 
-See main project documentation for Hostinger deployment instructions.
+See the local setup notes for development and deployment guidance.

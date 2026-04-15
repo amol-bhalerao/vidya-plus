@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 
 const FeeCollectionPage = () => {
   const { instituteId } = useUser();
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
   const [students, setStudents] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,7 +102,7 @@ const FeeCollectionPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {students.map(s => (
-                    <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.courses?.course_name || 'N/A'} | {s.gr_no || s.admission_no})</SelectItem>
+                    <SelectItem key={s.id} value={String(s.id)}>{s.full_name} ({s.course_name || s.courses?.course_name || 'N/A'} | {s.gr_no || s.admission_no})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

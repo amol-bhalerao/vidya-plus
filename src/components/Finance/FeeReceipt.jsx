@@ -33,7 +33,7 @@ const FeeReceiptPrintable = React.forwardRef(({ data }, ref) => {
             <div className="text-center my-2"><h2 className="text-base font-semibold underline underline-offset-4">FEE RECEIPT</h2></div>
             
             <div className="flex justify-between mb-2 text-xs">
-                <p><strong>Receipt No:</strong> {transaction.id.substring(0, 8).toUpperCase()}</p>
+                <p><strong>Receipt No:</strong> {`RCPT-${String(transaction.id).padStart(6, '0')}`}</p>
                 <p><strong>Date:</strong> {format(new Date(transaction.payment_date), "dd-MMM-yyyy")}</p>
             </div>
 
@@ -155,7 +155,7 @@ const FeeReceipt = ({ transactionId }) => {
     }, [transactionId]);
     
     const handlePrint = useReactToPrint({ 
-        content: () => componentRef.current
+        contentRef: componentRef
     });
 
     if (loading) return <div>Loading receipt...</div>;

@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/db.php';
 
+$routeId = null;
+if (preg_match('/\/employees\/(\d+)/', $_SERVER['REQUEST_URI'] ?? '', $matches)) {
+    $routeId = $matches[1];
+}
+
 $pdo->exec("CREATE TABLE IF NOT EXISTS employees (
     id INT AUTO_INCREMENT PRIMARY KEY,
     institute_id INT DEFAULT NULL,
@@ -14,7 +19,16 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS employees (
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $institute_id = $_GET['institute_id'] ?? null;
-    if ($institute_id) {
+    if ($routeId) {
+        $stmt = $pdo->prepare('SELECT e.*, r.name as role_name FROM employees e LEFT JOIN roles r ON e.role_id = r.id WHERE e.id = ? LIMIT 1');
+        $stmt->execute([$routeId]);
+        $row = $stmt->fetch();
+        if ($row) {
+            $row['roles'] = ['name' => $row['role_name'] ?? null];
+            unset($row['role_name']);
+        }
+        jsonResponse($row ?: []);
+    } elseif ($institute_id) {
         $stmt = $pdo->prepare('SELECT e.*, r.name as role_name FROM employees e LEFT JOIN roles r ON e.role_id = r.id WHERE e.institute_id = ?');
         $stmt->execute([$institute_id]);
     } else {
@@ -30,9 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     jsonResponse($out);
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_SERVER['REQUEST_METHOD'] === 'PUT') {
     $data = json_decode(file_get_contents('php://input'), true) ?? [];
-    $id = $data['id'] ?? null;
+    $id = $data['id'] ?? $routeId ?? null;
     $institute_id = $data['institute_id'] ?? null;
     $full_name = $data['full_name'] ?? null;
     $email = $data['email'] ?? null;
@@ -95,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
     parse_str(file_get_contents('php://input'), $d);
-    $id = $d['id'] ?? null;
+    $id = $d['id'] ?? $routeId ?? null;
     if (!$id) {
         http_response_code(400);
         jsonResponse(['error' => 'id required']);

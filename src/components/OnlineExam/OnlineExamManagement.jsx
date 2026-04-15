@@ -328,7 +328,7 @@ const OnlineExamManagement = ({ instituteId }) => {
                                 <TableCell>{new Date(exam.scheduled_start_time).toLocaleString()}</TableCell>
                                 <TableCell className="capitalize">{exam.status}</TableCell>
                                 <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" title="Print Results" onClick={() => navigate(`/dashboard/online-exam/print/${exam.id}`)}><Printer className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" title="Print Results" onClick={() => navigate(`/admin/online-exam/print/${exam.id}`)}><Printer className="h-4 w-4" /></Button>
                                     <Button variant="ghost" size="icon" title="Publish/Unpublish" onClick={() => handlePublish(exam.id, exam.status)}><Send className={`h-4 w-4 ${exam.status === 'published' ? 'text-green-500' : ''}`} /></Button>
                                     <Button variant="ghost" size="icon" title="Manage Questions" onClick={() => handleOpenQuestions(exam)}><ListChecks className="h-4 w-4" /></Button>
                                     <Button variant="ghost" size="icon" title="Edit" onClick={() => handleOpenForm(exam)}><Edit className="h-4 w-4" /></Button>

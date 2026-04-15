@@ -11,23 +11,26 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Helmet } from 'react-helmet-async';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, FileText } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useUser } from '@/contexts/UserContext';
+import AdmissionFormPrint from './AdmissionFormPrint';
 
 const studentSchema = z.object({
-  gr_no: z.string().optional(),
-  admission_no: z.string().min(1, 'Admission number is required.'),
-  abc_number: z.string().optional(),
-  full_name: z.string().min(3, 'Full name is required.'),
-  mother_name: z.string().min(3, 'Mother\'s name is required.'),
+  gr_no: z.string().trim().optional(),
+  admission_no: z.string().trim().min(1, 'Admission number is required.'),
+  abc_number: z.string().trim().optional(),
+  full_name: z.string().trim().min(3, 'Full name is required.'),
+  mother_name: z.string().trim().min(3, 'Mother\'s name is required.'),
   date_of_birth: z.date({ required_error: 'Date of birth is required.' }),
-  birth_place: z.string().min(2, "Place of birth is required"),
+  birth_place: z.string().trim().min(2, "Place of birth is required"),
   gender: z.enum(['male', 'female', 'other'], { required_error: 'Gender is required.' }),
-  aadhaar_no: z.string().length(12, 'Aadhaar must be 12 digits.').optional().or(z.literal('')),
+  aadhaar_no: z.string().trim().regex(/^\d{12}$/, 'Aadhaar must be 12 digits.').optional().or(z.literal('')),
   caste: z.string().optional(),
   category: z.string().optional(),
   religion: z.string().optional(),
@@ -38,8 +41,8 @@ const studentSchema = z.object({
     leaving_date: z.string().optional(),
   }).optional(),
   admission_date: z.date({ required_error: 'Admission date is required.' }),
-  course_id: z.string().uuid('Please select a course.'),
-  class_id: z.string().uuid('Please select a class.'),
+  course_id: z.string().min(1, 'Please select a course.'),
+  class_id: z.string().min(1, 'Please select a class.'),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -47,11 +50,15 @@ const EditStudent = ({ instituteId }) => {
   const { id: studentId } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { instituteId: contextInstituteId } = useUser();
+  const activeInstituteId = instituteId || contextInstituteId;
 
   const [courses, setCourses] = useState([]);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [printPreviewData, setPrintPreviewData] = useState(null);
+  const [printLoading, setPrintLoading] = useState(false);
 
   const { register, handleSubmit, control, watch, setValue, formState: { errors }, reset } = useForm({
     resolver: zodResolver(studentSchema)
@@ -79,11 +86,13 @@ const EditStudent = ({ instituteId }) => {
           date_of_birth: data.date_of_birth ? parseISO(data.date_of_birth) : null,
           admission_date: data.admission_date ? parseISO(data.admission_date) : null,
           previous_school_details: data.previous_school_details || { name: '', leaving_certificate_no: '', leaving_date: '' },
+          course_id: data.course_id ? String(data.course_id) : '',
+          class_id: data.class_id ? String(data.class_id) : '',
         };
         reset(studentData);
       } catch (error) {
         toast({ variant: 'destructive', title: 'Error fetching student data.', description: error.message });
-        navigate('/dashboard/students');
+        navigate('/admin/students');
       } finally {
         setPageLoading(false);
       }
@@ -96,9 +105,9 @@ const EditStudent = ({ instituteId }) => {
 
   useEffect(() => {
     const fetchCourses = async () => {
-      if (!instituteId) return;
+      if (!activeInstituteId) return;
       try {
-        const response = await fetch(`${API_BASE}/courses?institute_id=${instituteId}`, {
+        const response = await fetch(`${API_BASE}/courses?institute_id=${activeInstituteId}`, {
           method: 'GET',
           credentials: 'include'
         });
@@ -115,7 +124,7 @@ const EditStudent = ({ instituteId }) => {
       }
     };
     fetchCourses();
-  }, [instituteId, toast]);
+  }, [activeInstituteId, toast]);
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -143,10 +152,37 @@ const EditStudent = ({ instituteId }) => {
     fetchClasses();
   }, [selectedCourseId, toast]);
 
+  const handlePreviewAdmissionForm = async () => {
+    setPrintLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/student-details?id=${studentId}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error fetching admission form details');
+      }
+
+      const data = await response.json();
+      setPrintPreviewData(data);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error loading admission form', description: error.message });
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
   const onSubmit = async (formData) => {
     setLoading(true);
     try {
-      const { created_at, ...submissionData } = formData;
+      const { created_at, ...submissionData } = {
+        ...formData,
+        institute_id: Number(activeInstituteId),
+        course_id: Number(formData.course_id),
+        class_id: Number(formData.class_id),
+      };
 
       const response = await fetch(`${API_BASE}/students/${studentId}`, {
         method: 'PUT',
@@ -163,7 +199,7 @@ const EditStudent = ({ instituteId }) => {
       }
 
       toast({ title: 'Success', description: 'Student updated successfully.' });
-      navigate('/dashboard/students');
+      navigate('/admin/students');
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error updating student', description: error.message });
     } finally {
@@ -182,8 +218,16 @@ const EditStudent = ({ instituteId }) => {
       </Helmet>
       <Card>
         <CardHeader>
-          <CardTitle>Edit Student Details</CardTitle>
-          <CardDescription>Update the information for the selected student.</CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle>Edit Student Details</CardTitle>
+              <CardDescription>Update the information for the selected student.</CardDescription>
+            </div>
+            <Button type="button" variant="outline" onClick={handlePreviewAdmissionForm} disabled={printLoading}>
+              <FileText className="mr-2 h-4 w-4" />
+              {printLoading ? 'Loading Form...' : 'Preview / Print Form'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -303,7 +347,7 @@ const EditStudent = ({ instituteId }) => {
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger><SelectValue placeholder="Select course" /></SelectTrigger>
-                        <SelectContent>{courses.map(course => <SelectItem key={course.id} value={course.id}>{course.course_name}</SelectItem>)}</SelectContent>
+                        <SelectContent>{courses.map(course => <SelectItem key={course.id} value={String(course.id)}>{course.course_name}</SelectItem>)}</SelectContent>
                       </Select>
                     )}
                   />
@@ -317,7 +361,7 @@ const EditStudent = ({ instituteId }) => {
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value} disabled={!selectedCourseId || classes.length === 0}>
                         <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                        <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.class_name} {c.section && `- ${c.section}`}</SelectItem>)}</SelectContent>
+                        <SelectContent>{classes.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.class_name} {c.section && `- ${c.section}`}</SelectItem>)}</SelectContent>
                       </Select>
                     )}
                   />
@@ -377,6 +421,16 @@ const EditStudent = ({ instituteId }) => {
           </form>
         </CardContent>
       </Card>
+
+      <Dialog open={!!printPreviewData} onOpenChange={() => setPrintPreviewData(null)}>
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Admission Form Preview</DialogTitle>
+            <DialogDescription>Review and print the admission form for the current student.</DialogDescription>
+          </DialogHeader>
+          {printPreviewData && <AdmissionFormPrint studentData={printPreviewData} />}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

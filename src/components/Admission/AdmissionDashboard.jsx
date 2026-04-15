@@ -14,8 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 const PAGE_SIZE = 10;
 
 const AdmissionDashboard = () => {
-  const { user } = useUser();
-  const instituteId = user?.institute_id;
+  const { user, instituteId: selectedInstituteId } = useUser();
+  const instituteId = selectedInstituteId || user?.institute_id;
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
