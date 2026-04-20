@@ -25,6 +25,8 @@ const AttendanceDashboard = () => {
   const [selectedCourse, setSelectedCourse] = useState('');
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [attendanceDate, setAttendanceDate] = useState(new Date());
   const [loading, setLoading] = useState({ institutes: false, courses: false, classes: false });
 
@@ -116,6 +118,43 @@ const AttendanceDashboard = () => {
     fetchClasses();
   }, [selectedCourse]);
 
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      if (!selectedClass) {
+        setSubjects([]);
+        setSelectedSubject('');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/class_subjects?class_id=${encodeURIComponent(selectedClass)}`, {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          const subjectRows = Array.isArray(data) ? data : [];
+          setSubjects(subjectRows);
+          if (subjectRows.length > 0) {
+            setSelectedSubject(String(subjectRows[0].id));
+          } else {
+            setSelectedSubject('');
+          }
+        } else {
+          console.error('Error fetching subjects:', data.error || 'Unknown error');
+          setSubjects([]);
+          setSelectedSubject('');
+        }
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+        setSubjects([]);
+        setSelectedSubject('');
+      }
+    };
+
+    fetchSubjects();
+  }, [API_BASE, selectedClass]);
+
   return (
     <>
       <Helmet>
@@ -152,7 +191,7 @@ const AttendanceDashboard = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
           <TabsContent value="daily_attendance">
-            <div className="bg-white/80 p-6 rounded-lg shadow-sm grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end mt-4">
+            <div className="bg-white/80 p-6 rounded-lg shadow-sm grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-end mt-4">
               <div className="space-y-2">
                 <Label htmlFor="course">Course</Label>
                 <Select id="course" onValueChange={setSelectedCourse} value={selectedCourse} disabled={!currentInstituteId || loading.courses}>
@@ -176,6 +215,22 @@ const AttendanceDashboard = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Select id="subject" onValueChange={setSelectedSubject} value={selectedSubject} disabled={!selectedClass || subjects.length === 0}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={selectedClass ? 'Select Subject' : 'Select class first'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.subject_name}{s.subject_code ? ` (${s.subject_code})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div className="space-y-2">
                 <Label>Date</Label>
@@ -191,18 +246,19 @@ const AttendanceDashboard = () => {
               </div>
             </div>
             
-            {selectedClass && attendanceDate && currentInstituteId ? (
+            {selectedClass && selectedSubject && attendanceDate && currentInstituteId ? (
               <div className="mt-6">
                 <AttendanceSheet
-                  key={`${selectedClass}-${attendanceDate.toISOString()}`}
+                  key={`${selectedClass}-${selectedSubject}-${attendanceDate.toISOString()}`}
                   classId={selectedClass}
+                  subjectId={selectedSubject}
                   date={attendanceDate}
                   instituteId={currentInstituteId}
                 />
               </div>
             ) : (
               <div className="text-center p-8 bg-white/80 rounded-lg shadow-sm mt-6">
-                <p className="text-gray-500">Please select a class and date to view the attendance sheet.</p>
+                <p className="text-gray-500">Please select a class, subject, and date to view the attendance sheet.</p>
               </div>
             )}
           </TabsContent>

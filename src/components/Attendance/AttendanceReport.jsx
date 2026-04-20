@@ -14,10 +14,12 @@ import { cn } from '@/lib/utils';
 const AttendanceReport = ({ instituteId }) => {
   const { toast } = useToast();
   const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   const fetchClasses = useCallback(async () => {
@@ -66,13 +68,47 @@ const AttendanceReport = ({ instituteId }) => {
     fetchStudentsForClass();
   }, [selectedClass, toast]);
 
+  useEffect(() => {
+    const fetchSubjectsForClass = async () => {
+      if (!selectedClass) {
+        setSubjects([]);
+        setSelectedSubject('');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/crud/class_subjects?class_id=${encodeURIComponent(selectedClass)}`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Error fetching subjects');
+        }
+
+        setSubjects(data || []);
+        if ((data || []).length > 0) {
+          setSelectedSubject(String(data[0].id));
+        } else {
+          setSelectedSubject('');
+        }
+      } catch (error) {
+        setSubjects([]);
+        setSelectedSubject('');
+        toast({ variant: 'destructive', title: 'Error fetching subjects', description: error.message });
+      }
+    };
+
+    fetchSubjectsForClass();
+  }, [selectedClass, toast]);
+
   const generateReport = async () => {
-    if (!selectedClass || !selectedMonth) return;
+    if (!selectedClass || !selectedSubject || !selectedMonth) return;
     
     setLoading(true);
     try {
       const monthStr = format(selectedMonth, 'yyyy-MM');
-      const response = await fetch(`${API_BASE}/crud/attendance?class_id=${encodeURIComponent(selectedClass)}&month=${monthStr}`, {
+      const response = await fetch(`${API_BASE}/crud/attendance?class_id=${encodeURIComponent(selectedClass)}&subject_id=${encodeURIComponent(selectedSubject)}&month=${monthStr}`, {
         method: 'GET',
         credentials: 'include'
       });
@@ -133,7 +169,7 @@ const AttendanceReport = ({ instituteId }) => {
         <CardDescription>Generate and view detailed attendance reports by class and month.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-4 items-end">
+        <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1">
             <label className="text-sm font-medium">Select Class</label>
             <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -144,6 +180,21 @@ const AttendanceReport = ({ instituteId }) => {
                 {classes.map((cls) => (
                   <SelectItem key={cls.id} value={cls.id.toString()}>
                     {cls.class_name} {cls.section || ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1 min-w-56">
+            <label className="text-sm font-medium">Select Subject</label>
+            <Select value={selectedSubject} onValueChange={setSelectedSubject} disabled={!selectedClass || subjects.length === 0}>
+              <SelectTrigger>
+                <SelectValue placeholder={selectedClass ? 'Choose a subject' : 'Select class first'} />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((sub) => (
+                  <SelectItem key={sub.id} value={String(sub.id)}>
+                    {sub.subject_name}{sub.subject_code ? ` (${sub.subject_code})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -174,7 +225,7 @@ const AttendanceReport = ({ instituteId }) => {
               </PopoverContent>
             </Popover>
           </div>
-          <Button onClick={generateReport} disabled={!selectedClass || !selectedMonth || loading}>
+          <Button onClick={generateReport} disabled={!selectedClass || !selectedSubject || !selectedMonth || loading}>
             {loading ? 'Generating...' : 'Generate Report'}
           </Button>
           {attendanceData.length > 0 && (

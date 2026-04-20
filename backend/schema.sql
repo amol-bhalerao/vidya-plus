@@ -195,6 +195,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
     class_id INT NOT NULL,
+    subject_id INT DEFAULT NULL,
     institute_id INT NOT NULL,
     date DATE NOT NULL,
     status VARCHAR(50) NOT NULL,
@@ -202,6 +203,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT attendance_student_fk FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
     CONSTRAINT attendance_class_fk FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+    CONSTRAINT attendance_subject_fk FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL,
     CONSTRAINT attendance_institute_fk FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE,
     CONSTRAINT attendance_marked_by_fk FOREIGN KEY (marked_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

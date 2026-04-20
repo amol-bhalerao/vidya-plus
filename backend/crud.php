@@ -43,6 +43,15 @@ if (!in_array($table, $allowed, true)) {
     jsonResponse(['error' => 'table not allowed']);
 }
 
+if ($table === 'attendance') {
+    // Backward-compatible schema guard for subject-wise attendance.
+    try {
+        $pdo->exec('ALTER TABLE attendance ADD COLUMN subject_id INT NULL AFTER class_id');
+    } catch (Throwable $e) {
+        // Column already exists or alter failed due to legacy constraints.
+    }
+}
+
 function decodeJsonFields(array $row): array
 {
     foreach (['contact_info', 'social_links', 'settings', 'previous_school_details', 'subjects', 'options', 'document_data', 'misc_fee_details', 'seat_layout'] as $field) {

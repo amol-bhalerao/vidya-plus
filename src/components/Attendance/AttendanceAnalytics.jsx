@@ -9,9 +9,11 @@ import { Users, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 const AttendanceAnalytics = ({ instituteId }) => {
   const { toast } = useToast();
   const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
 
   const fetchClasses = useCallback(async () => {
     try {
@@ -37,7 +39,7 @@ const AttendanceAnalytics = ({ instituteId }) => {
   }, [fetchClasses]);
 
   const generateAnalytics = async () => {
-    if (!selectedClass) return;
+    if (!selectedClass || !selectedSubject) return;
     
     setLoading(true);
     try {
@@ -52,7 +54,7 @@ const AttendanceAnalytics = ({ instituteId }) => {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
       
-      const attendanceRes = await fetch(`${API_BASE}/crud/attendance?class_id=${encodeURIComponent(selectedClass)}&date_gte=${dateStr}`, {
+      const attendanceRes = await fetch(`${API_BASE}/crud/attendance?class_id=${encodeURIComponent(selectedClass)}&subject_id=${encodeURIComponent(selectedSubject)}&date_gte=${dateStr}`, {
         credentials: 'include'
       });
       const attendanceData = await attendanceRes.json();
@@ -89,7 +91,7 @@ const AttendanceAnalytics = ({ instituteId }) => {
         excellentCount,
         goodCount,
         poorCount,
-        attendanceRate: ((excellentCount + goodCount) / totalStudents * 100).toFixed(1)
+        attendanceRate: totalStudents > 0 ? ((excellentCount + goodCount) / totalStudents * 100).toFixed(1) : '0.0'
       });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error generating analytics', description: error.message });
@@ -99,12 +101,45 @@ const AttendanceAnalytics = ({ instituteId }) => {
   };
 
   useEffect(() => {
+    const fetchSubjectsForClass = async () => {
+      if (!selectedClass) {
+        setSubjects([]);
+        setSelectedSubject('');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/crud/class_subjects?class_id=${encodeURIComponent(selectedClass)}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Error fetching subjects');
+        }
+
+        setSubjects(data || []);
+        if ((data || []).length > 0) {
+          setSelectedSubject(String(data[0].id));
+        } else {
+          setSelectedSubject('');
+        }
+      } catch (error) {
+        setSubjects([]);
+        setSelectedSubject('');
+        toast({ variant: 'destructive', title: 'Error fetching subjects', description: error.message });
+      }
+    };
+
+    fetchSubjectsForClass();
+  }, [selectedClass, toast]);
+
+  useEffect(() => {
     if (selectedClass) {
       generateAnalytics();
     } else {
       setAnalytics(null);
     }
-  }, [selectedClass]);
+  }, [selectedClass, selectedSubject]);
 
   return (
     <div className="space-y-4">
@@ -124,6 +159,21 @@ const AttendanceAnalytics = ({ instituteId }) => {
                 {classes.map((cls) => (
                   <SelectItem key={cls.id} value={cls.id.toString()}>
                     {cls.class_name} {cls.section || ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Select Subject</label>
+            <Select value={selectedSubject} onValueChange={setSelectedSubject} disabled={!selectedClass || subjects.length === 0}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder={selectedClass ? 'Choose a subject' : 'Select class first'} />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((sub) => (
+                  <SelectItem key={sub.id} value={String(sub.id)}>
+                    {sub.subject_name}{sub.subject_code ? ` (${sub.subject_code})` : ''}
                   </SelectItem>
                 ))}
               </SelectContent>

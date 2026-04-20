@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, UserPlus, Users, DollarSign, Calendar, BookOpen, FileText, Settings, Building, Globe, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, UserPlus, Users, DollarSign, Calendar, BookOpen, FileText, Settings, Building, Globe, LogOut, ChevronLeft, ChevronRight, ClipboardCheck } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,7 @@ const menuItems = [
   { id: 'finance', label: 'Finance', icon: DollarSign, path: '/admin/finance' },
   { id: 'attendance', label: 'Attendance', icon: Calendar, path: '/admin/attendance' },
   { id: 'examination', label: 'Exams', icon: BookOpen, path: '/admin/examination' },
+  { id: 'online-exam', label: 'Online Exams', icon: ClipboardCheck, path: '/admin/online-exam' },
   { id: 'documents', label: 'Documents', icon: FileText, path: '/admin/documents' },
   { id: 'website', label: 'Website', icon: Globe, path: '/admin/website' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },

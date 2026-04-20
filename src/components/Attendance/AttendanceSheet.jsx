@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
-const AttendanceSheet = ({ classId, date, instituteId }) => {
+const AttendanceSheet = ({ classId, subjectId, date, instituteId }) => {
   const { user } = useUser();
   const { toast } = useToast();
   const [students, setStudents] = useState([]);
@@ -38,7 +38,7 @@ const AttendanceSheet = ({ classId, date, instituteId }) => {
       setStudents(studentRows);
 
       // Fetch existing attendance for that day
-      const attendanceResponse = await fetch(`${API_BASE}/attendance/class/${classId}/date/${formattedDate}`, {
+      const attendanceResponse = await fetch(`${API_BASE}/attendance/class/${classId}/subject/${subjectId}/date/${formattedDate}`, {
         method: 'GET',
         credentials: 'include'
       });
@@ -61,7 +61,7 @@ const AttendanceSheet = ({ classId, date, instituteId }) => {
     } finally {
       setLoading(false);
     }
-  }, [classId, date, toast]);
+  }, [classId, subjectId, date, toast]);
 
   useEffect(() => {
     fetchAttendanceData();
@@ -97,6 +97,7 @@ const AttendanceSheet = ({ classId, date, instituteId }) => {
     const recordsToSave = Object.entries(attendance).map(([student_id, status]) => ({
       student_id,
       class_id: classId,
+      subject_id: subjectId,
       institute_id: instituteId,
       date: formattedDate,
       status,
